@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: crous-alert-france
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 app.web:app
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_TRIAL_CHAT_ID
+        value: "-1004420745494"
+      - key: TELEGRAM_PREMIUM_CHAT_ID
+        value: "-1004417792221"
+      - key: DATABASE_URL
+        sync: false
+      - key: CROUS_BASE_URL
+        value: https://trouverunlogement.lescrous.fr
+      - key: CROUS_TOOL_ID
+        value: "47"
+      - key: CROUS_TOOL_MECHANISM
+        value: residual
+      - key: CROUS_USER_AGENT
+        value: CROUSAlertFrance/0.1 (independent student project)
+      - key: ENABLE_IMAGES
+        value: "true"
+      - key: TELEGRAM_PROTECT_CONTENT
+        value: "true"
+      - key: PUBLISH_EXISTING_ON_FIRST_RUN
+        value: "false"
+      - key: POLL_INTERVAL_SECONDS
+        value: "300"
+      - key: HTTP_TIMEOUT_SECONDS
+        value: "20"
+      - key: HTTP_MAX_RETRIES
+        value: "4"
+      - key: LOG_PATH
+        value: /tmp/crous-alert.log
+      - key: MONITOR_ENABLED
+        value: "true"
