@@ -70,5 +70,4 @@ def health() -> tuple[object, int]:
         ),
         200,
     )
-
 start_monitor_once()
