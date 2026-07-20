@@ -19,9 +19,14 @@ _started_at: str | None = None
 _last_error: str | None = None
 _lock = threading.Lock()
 
+_TRUE_VALUES = {"1", "true", "yes", "on"}
+
 
 def _monitor() -> None:
     global _started_at, _last_error
+
+    _started_at = datetime.now(timezone.utc).isoformat()
+    _last_error = None
 
     try:
         load_env_file()
@@ -34,7 +39,7 @@ def _monitor() -> None:
                 "DATABASE_URL is empty; hosted restarts can lose SQLite state"
             )
 
-        _started_at = datetime.now(timezone.utc).isoformat()
+        logger.info("Background CROUS monitor started")
         run_forever(settings)
 
     except BaseException as exc:
@@ -46,7 +51,9 @@ def start_monitor_once() -> threading.Thread | None:
     global _thread
 
     enabled = os.getenv("MONITOR_ENABLED", "true").strip().lower()
-    if enabled not in {"1", "true", "yes", "on"}:
+
+    if enabled not in _TRUE_VALUES:
+        logger.warning("Monitor disabled: MONITOR_ENABLED=%r", enabled)
         return None
 
     with _lock:
@@ -62,6 +69,11 @@ def start_monitor_once() -> threading.Thread | None:
         return _thread
 
 
+@app.before_request
+def ensure_monitor_started() -> None:
+    start_monitor_once()
+
+
 @app.get("/")
 @app.get("/healthz")
 def health() -> tuple[object, int]:
@@ -71,9 +83,11 @@ def health() -> tuple[object, int]:
         jsonify(
             service="crous-alert-france",
             status="ok",
+            monitor_enabled=os.getenv("MONITOR_ENABLED", "true"),
             monitor_alive=alive,
             monitor_error=_last_error,
             started_at=_started_at,
+            pid=os.getpid(),
         ),
         200,
     )
