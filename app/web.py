@@ -63,12 +63,12 @@ def health() -> tuple[object, int]:
     return (
         jsonify(
             service="crous-alert-france",
-            status="ok" if alive else "error",
+            status="ok",
             monitor_alive=alive,
+            monitor_error=_last_error,
             started_at=_started_at,
         ),
-        200 if alive else 503,
+        200,
     )
-
 
 start_monitor_once()
