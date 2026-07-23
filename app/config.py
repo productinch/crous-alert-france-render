@@ -29,6 +29,8 @@ class Settings:
     telegram_bot_token: str
     telegram_trial_chat_id: str
     telegram_premium_chat_id: str
+    telegram_personal_chat_id: str
+    telegram_personal_city: str
     enable_images: bool
     protect_content: bool
     publish_existing_on_first_run: bool
@@ -40,44 +42,103 @@ class Settings:
     def from_env(cls) -> "Settings":
         settings = cls(
             crous_base_url=os.getenv(
-                "CROUS_BASE_URL", "https://trouverunlogement.lescrous.fr"
+                "CROUS_BASE_URL",
+                "https://trouverunlogement.lescrous.fr",
             ).rstrip("/"),
             crous_tool_id=_int("CROUS_TOOL_ID", 47),
-            crous_tool_mechanism=os.getenv("CROUS_TOOL_MECHANISM", "residual"),
-            poll_interval_seconds=max(_int("POLL_INTERVAL_SECONDS", 120), 30),
-            http_timeout_seconds=_int("HTTP_TIMEOUT_SECONDS", 20),
-            http_max_retries=_int("HTTP_MAX_RETRIES", 4),
+            crous_tool_mechanism=os.getenv(
+                "CROUS_TOOL_MECHANISM",
+                "residual",
+            ),
+            poll_interval_seconds=max(
+                _int("POLL_INTERVAL_SECONDS", 120),
+                30,
+            ),
+            http_timeout_seconds=_int(
+                "HTTP_TIMEOUT_SECONDS",
+                20,
+            ),
+            http_max_retries=_int(
+                "HTTP_MAX_RETRIES",
+                4,
+            ),
             user_agent=os.getenv(
                 "CROUS_USER_AGENT",
-                "CROUSAlertFrance/0.1 (independent student project; contact: unset)",
+                "CROUSAlertFrance/0.1 "
+                "(independent student project; contact: unset)",
             ),
-            telegram_bot_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
+            telegram_bot_token=os.getenv(
+                "TELEGRAM_BOT_TOKEN",
+                "",
+            ).strip(),
             telegram_trial_chat_id=os.getenv(
-                "TELEGRAM_TRIAL_CHAT_ID", "-1004420745494"
-            ),
+                "TELEGRAM_TRIAL_CHAT_ID",
+                "-1004420745494",
+            ).strip(),
             telegram_premium_chat_id=os.getenv(
-                "TELEGRAM_PREMIUM_CHAT_ID", "-1004417792221"
+                "TELEGRAM_PREMIUM_CHAT_ID",
+                "-1004417792221",
+            ).strip(),
+            telegram_personal_chat_id=os.getenv(
+                "TELEGRAM_PERSONAL_CHAT_ID",
+                "",
+            ).strip(),
+            telegram_personal_city=os.getenv(
+                "TELEGRAM_PERSONAL_CITY",
+                "",
+            ).strip(),
+            enable_images=_bool(
+                "ENABLE_IMAGES",
+                False,
             ),
-            enable_images=_bool("ENABLE_IMAGES", False),
-            protect_content=_bool("TELEGRAM_PROTECT_CONTENT", True),
+            protect_content=_bool(
+                "TELEGRAM_PROTECT_CONTENT",
+                True,
+            ),
             publish_existing_on_first_run=_bool(
-                "PUBLISH_EXISTING_ON_FIRST_RUN", False
+                "PUBLISH_EXISTING_ON_FIRST_RUN",
+                False,
             ),
-            database_url=os.getenv("DATABASE_URL", "").strip(),
-            database_path=Path(os.getenv("DATABASE_PATH", "data/offers.sqlite3")),
-            log_path=Path(os.getenv("LOG_PATH", "logs/crous-alert.log")),
+            database_url=os.getenv(
+                "DATABASE_URL",
+                "",
+            ).strip(),
+            database_path=Path(
+                os.getenv(
+                    "DATABASE_PATH",
+                    "data/offers.sqlite3",
+                )
+            ),
+            log_path=Path(
+                os.getenv(
+                    "LOG_PATH",
+                    "logs/crous-alert.log",
+                )
+            ),
         )
+
         if settings.poll_interval_seconds < 30:
-            raise ValueError("POLL_INTERVAL_SECONDS must be at least 30 seconds")
+            raise ValueError(
+                "POLL_INTERVAL_SECONDS must be at least 30 seconds"
+            )
+
         return settings
 
     @property
     def database_target(self) -> str | Path:
-        """Use PostgreSQL in hosted environments, SQLite for local development."""
+        """Use PostgreSQL in hosted environments, SQLite locally."""
         return self.database_url or self.database_path
 
     def require_telegram(self) -> None:
         if not self.telegram_bot_token:
-            raise ValueError("TELEGRAM_BOT_TOKEN is missing from the environment")
-        if not self.telegram_trial_chat_id or not self.telegram_premium_chat_id:
-            raise ValueError("Both Telegram channel IDs are required")
+            raise ValueError(
+                "TELEGRAM_BOT_TOKEN is missing from the environment"
+            )
+
+        if (
+            not self.telegram_trial_chat_id
+            or not self.telegram_premium_chat_id
+        ):
+            raise ValueError(
+                "Both Telegram channel IDs are required"
+            )
